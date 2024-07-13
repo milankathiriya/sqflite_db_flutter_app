@@ -1,3 +1,7 @@
+import 'dart:developer';
+
+import 'package:sqlite_app/models/ie.dart';
+
 import '../../models/category.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
@@ -17,10 +21,16 @@ class DBHelper {
       path,
       version: 1,
       onCreate: (Database db, int version) async {
-        String query =
-            "CREATE TABLE IF NOT EXISTS category(id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, image BLOB);";
-        await db.execute(query);
-        print("TABLE IS CREATED....");
+        String category_table_query =
+            "CREATE TABLE IF NOT EXISTS category(id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL UNIQUE, image BLOB);";
+        await db.execute(category_table_query);
+
+        String ie_table_query =
+            "CREATE TABLE IF NOT EXISTS ie(id INTEGER PRIMARY KEY AUTOINCREMENT, desc TEXT NOT NULL, amount REAL NOT NULL, category INTEGER NOT NULL, type TEXT NOT NULL);";
+
+        log(ie_table_query);
+
+        await db.execute(ie_table_query);
       },
     );
   }
@@ -85,11 +95,70 @@ class DBHelper {
         args); // returns an int with value 1 (total no. of deleted records)
   }
 
-  // TODO: insert I/E data
-  // TODO: select all I/E data
+  // search category
+  Future<List<Category>> searchCategory({required String data}) async {
+    if (db == null) {
+      await initDB();
+    }
+
+    String query = "SELECT * FROM category WHERE name LIKE '%$data%';";
+    List<Map<String, dynamic>>? records = await db?.rawQuery(query);
+
+    if (records != null) {
+      List<Category> searchedCategories =
+          records.map((e) => Category.fromMap(data: e)).toList();
+
+      return searchedCategories;
+    } else {
+      return [];
+    }
+  }
+
+  // insert I/E data
+  Future<int> insertIE({required IE ie}) async {
+    if (db == null) {
+      await initDB();
+    }
+
+    String query =
+        "INSERT INTO ie(desc, amount, category, type) VALUES(?, ?, ?, ?);";
+    List args = [ie.desc, ie.amount, ie.category, ie.type];
+
+    return db!.rawInsert(query, args); // int => inserted record's PK
+  }
+
+  // select all I/E data
+  Future<List<IE>> fetchAllIE() async {
+    if (db == null) {
+      await initDB();
+    }
+
+    String query = "SELECT * FROM ie;";
+
+    List<Map<String, dynamic>> records = await db!.rawQuery(query);
+
+    List<IE> allIE = records.map((e) => IE.fromMap(data: e)).toList();
+
+    return allIE;
+  }
+
+  // select a single category data
+  Future<List<Category>> fetchSingleCategory({required int id}) async {
+    if (db == null) {
+      await initDB();
+    }
+
+    String query = "SELECT * FROM category WHERE id=?;";
+    List args = [id];
+
+    List<Map<String, dynamic>> records = await db!.rawQuery(query, args);
+
+    List<Category> founded_records =
+        records.map((e) => Category.fromMap(data: e)).toList();
+
+    return founded_records;
+  }
+
   // TODO: update I/E data
   // TODO: delete I/E data
 }
-
-// DBHelper.dbHelper.x = 100;
-// DBHelper.dbHelper.disp();

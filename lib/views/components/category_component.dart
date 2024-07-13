@@ -49,6 +49,21 @@ class _CategoryComponentState extends State<CategoryComponent> {
             ),
             const SizedBox(height: 16),
             Expanded(
+              flex: 2,
+              child: TextField(
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(),
+                  hintText: "Search by name...",
+                ),
+                onChanged: (val) async {
+                  setState(() {
+                    getCategories = DBHelper.dbHelper.searchCategory(data: val);
+                  });
+                },
+              ),
+            ),
+            const SizedBox(height: 16),
+            Expanded(
               flex: 14,
               child: FutureBuilder(
                 future: getCategories,
